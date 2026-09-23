@@ -13,10 +13,6 @@
   macOS · Python + Electron · Powered by JEV
 </p>
 
-<p align="center">
-  <img src="assets/demo.gif" alt="JEV Search on the Desktop">
-</p>
-
 ---
 
 Search files, documents, and code with **⌘⌥Space**. Fresh local retrieval,
