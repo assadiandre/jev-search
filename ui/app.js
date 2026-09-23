@@ -53,10 +53,10 @@ function updateSettings(settings) {
   $('#root-name').textContent = name;
   $('#root-name').title = settings.root;
   $('#compact-folder').title = `Search in ${settings.root} · click to change`;
-  $('#mode-label').textContent = settings.hasKey ? 'Live · no index' : 'Filename search · add a key';
+  $('#mode-label').textContent = settings.hasKey ? 'Streaming · no saved index' : 'Local streaming · add a key';
 }
 
-async function startSearch(query = $('#query').value, mode = 'fast') {
+async function startSearch(query = $('#query').value, mode = 'streaming') {
   if (!query.trim()) { $('#query').focus(); return; }
   $('#query').value = query; $('#clear-query').classList.remove('hidden');
   state.hits = []; state.selected = null; state.count = 0; state.query = query; state.phase = 'starting'; state.stats = {}; state.started = performance.now(); state.searchId = null; state.message = ''; state.detailSignature = '';
@@ -71,12 +71,13 @@ async function startSearch(query = $('#query').value, mode = 'fast') {
 function render({ updateResults = true } = {}) {
   syncWindowLayout();
   const running = active(), stats = state.stats;
+  const streaming = (stats.mode || state.mode) === 'streaming';
   const fast = (stats.mode || state.mode) === 'fast';
   $('#stop-button').classList.toggle('hidden', !running);
   const titles = { starting: 'Starting a fresh search', scanning: 'Looking through your files', thinking: 'Finding connections with JEV', complete: 'Search complete', partial: 'Partial results', stopped: 'Search stopped', error: 'Search needs attention' };
-  $('#results-title').textContent = state.phase === 'complete' ? (fast ? 'Fast results' : 'Full search complete') : titles[state.phase] || 'Results';
+  $('#results-title').textContent = state.phase === 'complete' ? (streaming ? 'Streaming results' : fast ? 'Fast results' : 'Full search complete') : titles[state.phase] || 'Results';
   $('#widen-button').classList.toggle('hidden', running || !fast || !state.settings?.hasKey || !['complete', 'partial', 'stopped'].includes(state.phase));
-  $('#coverage-summary').textContent = `${fast ? 'Fast pass' : 'Full pass'} · ${stats.scanComplete ? 'Names checked across your search folder' : 'Checking names across your search folder'} · ${state.settings?.hasKey && state.settings?.readContents ? 'File contents sampled selectively' : 'Names and paths only'}`;
+  $('#coverage-summary').textContent = streaming ? `${number(stats.textFilesRead)} text files streamed · ${number(stats.documentsSampled)} documents sampled · ${number(stats.nameOnly)} names only` : `${fast ? 'Fast pass' : 'Full pass'} · ${stats.scanComplete ? 'Names checked across your search folder' : 'Checking names across your search folder'} · ${state.settings?.hasKey && state.settings?.readContents ? 'File contents sampled selectively' : 'Names and paths only'}`;
   const filtered = visibleHits();
   const unchecked = state.filter === 'all' && stats.unverifiedMatches != null ? stats.unverifiedMatches : filtered.filter(hit => hit.probability == null).length;
   $('#results-total').textContent = `${number(state.filter === 'all' ? state.count : filtered.length)} results${unchecked ? ` · ${number(unchecked)} not JEV-checked` : ''}${state.count > 500 ? ' · best 500 shown' : ''}`;
@@ -93,13 +94,14 @@ function render({ updateResults = true } = {}) {
   }
   let status = 'Ready when you are';
   if (state.phase === 'starting' || state.phase === 'scanning') status = `${number(stats.scanned)} entries discovered · reading the filesystem live`;
+  else if (streaming && stats.scanned != null) status = `${number(stats.scanned)} entries · ${number(stats.textFilesRead)} text files streamed · ${number(stats.evaluated)} JEV checked`;
   else if (stats.scanned != null) status = `${number(stats.scanned)} names checked · ${number(stats.sampled)} files sampled · ${number(stats.evaluated)} JEV checked${stats.failed ? ` · ${number(stats.failed)} failed` : ''}`;
   $('#status-left').innerHTML = `${running ? '<span class="spinner"></span>' : '<span class="status-dot"></span>'}<span>${escape(status)}</span>`;
   $('#status-left').title = `${stats.excluded || 0} hidden, generated, or package folders excluded. ${stats.unreadable || 0} unreadable entries. ${stats.protected || 0} protected files excluded from JEV. ${stats.scanTime ? `Filesystem scan: ${duration(stats.scanTime)}.` : ''}`;
   $('#status-right').textContent = stats.requests ? `${number(stats.requests)} API requests${cost.incomplete ? ' · billing may be incomplete' : ''}` : '↑ ↓ to navigate · ↵ to open';
   const bar = $('#progress-bar');
   bar.classList.toggle('indeterminate', state.phase === 'starting' || state.phase === 'scanning');
-  const total = fast ? (stats.selected || stats.candidateLimit || 128) : (stats.scanned || 0) - (stats.protected || 0);
+  const total = (fast || streaming) ? (stats.selected || stats.candidateLimit || 128) : (stats.scanned || 0) - (stats.protected || 0);
   bar.style.width = state.phase === 'complete' ? '100%' : state.phase === 'idle' ? '0%' : `${total ? Math.min(100, 100 * ((stats.evaluated || 0) + (stats.failed || 0)) / total) : 0}%`;
 }
 
@@ -152,7 +154,7 @@ function renderDetail() {
   if (signature === state.detailSignature) return;
   state.detailSignature = signature;
   const date = hit.modified == null ? 'Not read yet' : new Date(hit.modified * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  $('#detail').innerHTML = `<div class="file-icon ${hit.kind}">${icon(hit.kind)}</div><h3>${escape(hit.name)}</h3><div class="detail-path">${escape(hit.relative)}</div><div class="detail-actions"><button data-action="open">Open ${icon('arrow')}</button><button data-action="reveal">Show in Finder</button></div><dl class="detail-meta"><dt>Type</dt><dd>${escape(typeName(hit.kind))}${hit.symlink ? ' · symbolic link' : ''}</dd><dt>Modified</dt><dd>${escape(date)}</dd>${hit.kind !== 'folder' ? `<dt>Size</dt><dd>${hit.size == null ? 'Not read yet' : size(hit.size)}</dd>` : ''}<dt>Match</dt><dd>${hit.probability != null ? `${Math.round(hit.probability * 100)}% JEV relevance${hit.localScore >= .45 ? (hit.matchSource === 'content' ? ' · text match' : ' · name match') : ''}` : hit.matchSource === 'content' ? 'Literal text · not JEV-checked' : 'Filename words · not JEV-checked'}</dd></dl><div class="evidence-heading">${icon('spark')} ${hit.excerpt ? (hit.probability == null ? 'MATCHING TEXT' : 'WHAT JEV READ') : 'SEARCH COVERAGE'}</div><p class="excerpt">${escape(hit.excerpt || (hit.probability == null && active() ? 'This filename matches your words. JEV has not evaluated this result.' : 'Only the name and path were available; no readable text excerpt was used.'))}</p><div class="coverage">${escape(hit.coverage)}${hit.placeholder ? ' · cloud file is not downloaded' : ''}</div><button class="copy-path" data-action="copy">Copy full path</button>`;
+  $('#detail').innerHTML = `<div class="file-icon ${hit.kind}">${icon(hit.kind)}</div><h3>${escape(hit.name)}</h3><div class="detail-path">${escape(hit.relative)}</div><div class="detail-actions"><button data-action="open">Open ${icon('arrow')}</button><button data-action="reveal">Show in Finder</button></div><dl class="detail-meta"><dt>Type</dt><dd>${escape(typeName(hit.kind))}${hit.symlink ? ' · symbolic link' : ''}</dd><dt>Modified</dt><dd>${escape(date)}</dd>${hit.kind !== 'folder' ? `<dt>Size</dt><dd>${hit.size == null ? 'Not read yet' : size(hit.size)}</dd>` : ''}<dt>Match</dt><dd>${hit.probability != null ? `${Math.round(hit.probability * 100)}% JEV relevance${hit.localScore >= .45 ? (hit.matchSource === 'content' ? ' · text match' : ' · name match') : ''}` : hit.matchSource === 'content' ? 'Local text relevance · not JEV-checked' : 'Filename words · not JEV-checked'}</dd></dl><div class="evidence-heading">${icon('spark')} ${hit.excerpt ? (hit.probability == null ? 'MATCHING TEXT' : 'WHAT JEV READ') : 'SEARCH COVERAGE'}</div><p class="excerpt">${escape(hit.excerpt || (hit.probability == null && active() ? 'This is a local match. JEV has not evaluated this result.' : 'Only the name and path were available; no readable text excerpt was used.'))}</p><div class="coverage">${escape(hit.coverage)}${hit.placeholder ? ' · cloud file is not downloaded' : ''}</div><button class="copy-path" data-action="copy">Copy full path</button>`;
 }
 
 function selectResult(index, scroll = false) {
@@ -175,8 +177,8 @@ async function fileAction(action) {
 function showSettings() {
   if (!state.settings) return;
   $('#api-key').value = '';
-  $('#api-key').placeholder = state.settings.hasKey ? 'Key saved · paste here to replace it' : 'sk-or-v1-…';
-  $('#key-status').textContent = state.settings.hasKey ? '✓ Key saved' : 'Not connected';
+  $('#api-key').placeholder = state.settings.hasKey ? 'Key loaded · replace for this session' : 'sk-or-v1-…';
+  $('#key-status').textContent = state.settings.hasKey ? '✓ Key loaded' : 'Not connected';
   $('#include-generated').checked = state.settings.includeGenerated;
   $('#read-contents').checked = state.settings.readContents;
   $('#concurrency').value = state.settings.concurrency;

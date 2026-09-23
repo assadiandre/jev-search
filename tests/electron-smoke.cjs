@@ -12,7 +12,8 @@ async function main() {
   fs.writeFileSync(path.join(fixture, 'holiday.jpg'), 'image placeholder');
   const args = process.env.JEV_PACKAGED ? [] : [project];
   if (process.env.JEV_KEY_FILE) args.push(`--import-key=${process.env.JEV_KEY_FILE}`);
-  const instance = await electron.launch({ args, cwd: project, env: { ...process.env, JEV_USER_DATA_DIR: userData }, executablePath: process.env.JEV_PACKAGED || undefined });
+  const instance = await electron.launch({ args, cwd: project, env: { ...process.env, JEV_USER_DATA_DIR: userData, JEV_DISABLE_KEY_LOAD: process.env.JEV_KEY_FILE ? '0' : '1' }, executablePath: process.env.JEV_PACKAGED || undefined });
+  const previousClipboard = await instance.evaluate(({ clipboard }) => clipboard.readText());
   try {
     const page = await instance.firstWindow();
     const errors = [];
@@ -30,10 +31,13 @@ async function main() {
     await page.locator('#compact-folder').click();
     await page.locator('#query').fill('budget');
     await page.locator('#query').press('Enter');
-    await page.waitForFunction(() => document.querySelector('#results-title').textContent === 'Fast results');
+    await page.waitForFunction(() => document.querySelector('#results-title').textContent === 'Streaming results');
     assert.equal(await page.locator('.result-row').count(), 1);
     assert.match(await page.locator('#detail').innerText(), /budget-plan\.txt/);
-    if (process.env.JEV_KEY_FILE) assert.match(await page.locator('#detail').innerText(), /JEV relevance/);
+    if (process.env.JEV_KEY_FILE) {
+      assert.match(await page.locator('#detail').innerText(), /JEV relevance/);
+      console.log('Paid fixture check:', await page.evaluate(() => ({ cost: state.stats.cost, requests: state.stats.requests, evaluated: state.stats.evaluated, costReports: state.stats.costReports })));
+    }
     await page.locator('[data-action="copy"]').click();
     const copied = await instance.evaluate(({ clipboard }) => clipboard.readText());
     assert.equal(copied, path.join(fixture, 'budget-plan.txt'));
@@ -45,7 +49,7 @@ async function main() {
     fs.unlinkSync(path.join(fixture, 'budget-plan.txt'));
     fs.writeFileSync(path.join(fixture, 'budget-updated.txt'), 'New spending plan');
     await page.locator('#query').press('Enter');
-    await page.waitForFunction(() => document.querySelector('#results-title').textContent === 'Fast results' && document.querySelector('.result-name')?.textContent === 'budget-updated.txt');
+    await page.waitForFunction(() => document.querySelector('#results-title').textContent === 'Streaming results' && document.querySelector('.result-name')?.textContent === 'budget-updated.txt');
     await page.screenshot({ path: path.join(project, 'build/qa/results.png') });
     await page.locator('#compact-settings').click();
     await page.waitForFunction(() => innerHeight >= 600);
@@ -59,6 +63,7 @@ async function main() {
     assert.equal(errors.length, 0, errors.join('\n'));
     console.log('Electron smoke passed: startup, live search, preview, copy path, filters, fresh re-scan, settings.');
   } finally {
+    await instance.evaluate(({ clipboard }, value) => clipboard.writeText(value), previousClipboard);
     await instance.close();
     fs.rmSync(userData, { recursive: true, force: true });
     fs.rmSync(fixture, { recursive: true, force: true });

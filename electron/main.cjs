@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, shell, safeStorage, Menu, globalShortcut, clipboard, screen, Tray, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, shell, Menu, globalShortcut, clipboard, screen, Tray, nativeImage } = require('electron');
 const { createMenuBar } = require('./menu-bar.cjs');
 const { createWindowLayout } = require('./window-layout.cjs');
 const { spawn } = require('node:child_process');
@@ -7,8 +7,8 @@ const path = require('node:path');
 const readline = require('node:readline');
 const crypto = require('node:crypto');
 
-app.setName('JEV SEARCH');
-app.setPath('userData', process.env.JEV_USER_DATA_DIR ? path.resolve(process.env.JEV_USER_DATA_DIR) : path.join(app.getPath('appData'), 'JEV SEARCH'));
+app.setName('JEV SEARCH Streaming');
+app.setPath('userData', process.env.JEV_USER_DATA_DIR ? path.resolve(process.env.JEV_USER_DATA_DIR) : path.join(app.getPath('appData'), 'JEV SEARCH Streaming'));
 let window, worker, settings, key = '', activeId = '', quitting = false;
 let applyWindowLayout, tray;
 let nativeDialogOpen = false;
@@ -18,14 +18,9 @@ const workerReady = new Promise((resolve, reject) => { readyResolve = resolve; r
 workerReady.catch(() => {});
 const dataDir = app.getPath('userData');
 const configPath = path.join(dataDir, 'settings.json');
-const keyPath = path.join(dataDir, 'openrouter.enc');
 
-function saveKey(value) {
-  if (!safeStorage.isEncryptionAvailable()) throw new Error('macOS Keychain is unavailable. Unlock your login keychain and try again.');
-  fs.mkdirSync(dataDir, { recursive: true, mode: 0o700 });
-  fs.writeFileSync(keyPath, safeStorage.encryptString(value), { mode: 0o600 });
-  key = value;
-}
+
+function saveKey(value) { key = value; }
 
 function publicSettings() { return { ...settings, hasKey: Boolean(key), model: '~typesafe/jev-latest', version: app.getVersion() }; }
 function persistSettings() {
@@ -44,7 +39,7 @@ function focusSearch() {
 function createWindow() {
   window = new BrowserWindow({
     width: 760, height: 112, minWidth: 600, minHeight: 112,
-    title: 'JEV SEARCH', titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 22, y: 23 },
+    title: 'JEV SEARCH Streaming', titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 22, y: 23 },
     backgroundColor: '#faf9f6', show: false,
     webPreferences: { preload: path.join(__dirname, 'preload.cjs'), contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false },
   });
@@ -70,16 +65,19 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
-  settings = { root: path.join(app.getPath('home'), 'Desktop'), includeGenerated: false, readContents: true, concurrency: 12 };
+  settings = { root: path.join(app.getPath('home'), 'Desktop'), includeGenerated: false, readContents: true, concurrency: 4 };
   try { settings = { ...settings, ...JSON.parse(fs.readFileSync(configPath, 'utf8')) }; } catch {}
-  try { if (fs.existsSync(keyPath)) key = safeStorage.decryptString(fs.readFileSync(keyPath)); } catch {}
+  // Use the existing user-provided key file in memory; no Keychain access.
+  try {
+    if (process.env.JEV_DISABLE_KEY_LOAD !== '1') key = process.env.OPENROUTER_API_KEY || fs.readFileSync(process.env.JEV_KEY_FILE || path.join(app.getPath('desktop'), 'jev.txt'), 'utf8').trim();
+  } catch {}
   const importArgument = process.argv.find(arg => arg.startsWith('--import-key='));
   if (importArgument) saveKey(fs.readFileSync(importArgument.slice('--import-key='.length), 'utf8').trim());
 
   const project = path.resolve(__dirname, '..');
   const binary = app.isPackaged ? path.join(process.resourcesPath, 'python', 'jev-core', 'jev-core') : path.join(project, '.venv', 'bin', 'python');
   const args = app.isPackaged ? [] : ['-u', path.join(project, 'backend', 'server.py')];
-  worker = spawn(binary, args, { stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1', PYTHONUNBUFFERED: '1' } });
+  worker = spawn(binary, args, { detached: true, stdio: ['pipe', 'pipe', 'pipe'], env: { ...process.env, PYTHONDONTWRITEBYTECODE: '1', PYTHONUNBUFFERED: '1' } });
   const lines = readline.createInterface({ input: worker.stdout });
   lines.on('line', line => {
     try {
@@ -109,7 +107,7 @@ app.whenReady().then(async () => {
     if (typeof value.apiKey === 'string' && value.apiKey.trim()) saveKey(value.apiKey.trim());
     settings.includeGenerated = Boolean(value.includeGenerated);
     settings.readContents = Boolean(value.readContents);
-    settings.concurrency = Math.max(1, Math.min(24, Number(value.concurrency) || 12));
+    settings.concurrency = Math.max(1, Math.min(4, Number(value.concurrency) || 4));
     persistSettings();
     return publicSettings();
   });
@@ -124,12 +122,12 @@ app.whenReady().then(async () => {
       focusSearch();
     }
   });
-  ipcMain.handle('search:start', async (_, query, mode = 'fast') => {
+  ipcMain.handle('search:start', async (_, query, mode = 'streaming') => {
     if (typeof query !== 'string' || !query.trim()) throw new Error('Enter a search query.');
     await Promise.race([workerReady, new Promise((_, reject) => { const timer = setTimeout(() => reject(new Error('Python is taking too long to start. Restart the app.')), 15000); timer.unref(); })]);
     activeId = crypto.randomUUID();
     allowedPaths.clear();
-    send({ action: 'search', id: activeId, root: settings.root, query: query.trim().slice(0, 2000), key, options: { ...settings, mode: mode === 'deep' ? 'deep' : 'fast' } });
+    send({ action: 'search', id: activeId, root: settings.root, query: query.trim().slice(0, 2000), key, options: { ...settings, mode: 'streaming' } });
     return activeId;
   });
   ipcMain.handle('search:cancel', () => send({ action: 'cancel' }));
@@ -143,17 +141,17 @@ app.whenReady().then(async () => {
   });
 
   Menu.setApplicationMenu(Menu.buildFromTemplate([
-    { label: 'JEV SEARCH', submenu: [{ role: 'about' }, { type: 'separator' }, { label: 'Settings…', accelerator: 'CmdOrCtrl+,', click: () => window?.webContents.send('show-settings') }, { type: 'separator' }, { role: 'hide' }, { role: 'hideOthers' }, { type: 'separator' }, { role: 'quit' }] },
+    { label: 'JEV SEARCH Streaming', submenu: [{ role: 'about' }, { type: 'separator' }, { label: 'Settings…', accelerator: 'CmdOrCtrl+,', click: () => window?.webContents.send('show-settings') }, { type: 'separator' }, { role: 'hide' }, { role: 'hideOthers' }, { type: 'separator' }, { role: 'quit' }] },
     { label: 'File', submenu: [{ label: 'New Search', accelerator: 'CmdOrCtrl+K', click: focusSearch }, { role: 'close' }] },
     { label: 'Edit', submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },
     { label: 'View', submenu: [{ role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' }, { type: 'separator' }, { role: 'togglefullscreen' }] },
     { label: 'Window', submenu: [{ role: 'minimize' }, { role: 'zoom' }, { role: 'front' }] },
   ]));
-  globalShortcut.register('CommandOrControl+Shift+Space', focusSearch);
+  globalShortcut.register('CommandOrControl+Alt+Space', focusSearch);
   createWindow();
   tray = createMenuBar({ Tray, Menu, nativeImage, app, getWindow: () => window, focusSearch });
   if (process.platform === 'darwin') app.dock.hide();
 });
 app.on('activate', focusSearch);
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
-app.on('before-quit', () => { quitting = true; tray?.destroy(); globalShortcut.unregisterAll(); if (worker) { worker.kill('SIGTERM'); worker = null; } });
+app.on('before-quit', () => { quitting = true; tray?.destroy(); globalShortcut.unregisterAll(); if (worker) { try { process.kill(-worker.pid, 'SIGTERM'); } catch { worker.kill('SIGTERM'); } worker = null; } });

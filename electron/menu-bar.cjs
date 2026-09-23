@@ -4,7 +4,7 @@ function createMenuBar({ Tray, Menu, nativeImage, app, getWindow, focusSearch })
   const icon = nativeImage.createFromPath(path.join(__dirname, 'assets/searchTemplate.png'));
   icon.setTemplateImage(true);
   const tray = new Tray(icon);
-  tray.setToolTip('JEV Search');
+  tray.setToolTip('JEV Streaming');
   tray.on('click', () => {
     const window = getWindow();
     if (window?.isVisible()) window.hide();
@@ -14,7 +14,7 @@ function createMenuBar({ Tray, Menu, nativeImage, app, getWindow, focusSearch })
     { label: 'Search…', click: focusSearch },
     { label: 'Settings…', click: () => { focusSearch(); getWindow()?.webContents.send('show-settings'); } },
     { type: 'separator' },
-    { label: 'Quit JEV Search', click: () => app.quit() },
+    { label: 'Quit JEV Streaming', click: () => app.quit() },
   ]);
   tray.on('right-click', () => tray.popUpContextMenu(menu));
   return tray;

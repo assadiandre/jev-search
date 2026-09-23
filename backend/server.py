@@ -72,4 +72,8 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    if '--stream-worker' in sys.argv:
+        from backend.stream_worker import main as stream_main
+        asyncio.run(stream_main())
+    else:
+        asyncio.run(main())

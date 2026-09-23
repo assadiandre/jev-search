@@ -8,7 +8,7 @@ function describeSearchCost(stats = {}, phase = 'starting') {
   const formatted = amount > 0 && amount < 0.0001 ? '<$0.0001' : `$${amount.toFixed(4)}`;
   let detail = 'Sum of costs reported by OpenRouter for this search, in US dollars. Updates as API responses arrive.';
   if (incomplete) detail += ' This is a partial reported total; unreported or in-flight requests may still incur charges.';
-  else if (phase === 'complete' && !stats.requests) detail = 'No paid API requests were made. Filename search is free.';
+  else if (phase === 'complete' && !stats.requests) detail = 'No paid API requests were made. Local search is free.';
   return {
     label: unavailable ? 'Cost unavailable' : incomplete ? 'Reported cost' : running ? 'Cost so far' : 'Search cost',
     value: unavailable ? '—' : formatted,

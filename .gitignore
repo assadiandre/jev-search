@@ -24,3 +24,6 @@ jev.txt
 htmlcov/
 .idea/
 .vscode/
+
+# Installed native tokenizer dependency
+memory_deps/

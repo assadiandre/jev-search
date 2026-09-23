@@ -1,5 +1,7 @@
 # JEV SEARCH: improving recall within a fast search budget
 
+> Historical documentation for the earlier Fast/Look wider algorithm. The default on this branch is now streaming BM25 + JEV; see [README.md](README.md) for current behavior.
+
 Status: initial changes implemented: bounded fast search, independent content probes, candidate diversity, overlapping work, shared HTTP connections, coverage counts, and an explicit full-pass action. Result filtering now separates broad candidate admission from stricter local matches, applies word boundaries, honors JEV rejection, and labels unchecked results. Group screening and the larger recall benchmark remain planned. Python core, Electron UI, fresh filesystem reads on every query, no pre-indexing or saved content inventory. Everyday files remains the default scope; hidden/generated files remains an explicit option.
 
 ## Objective and measured starting point
