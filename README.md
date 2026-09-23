@@ -49,10 +49,17 @@ potentially cached files; UI/parent memory excluded.
 
 ### How it works
 
-**Fresh scan → BM25 shortlist → JEV → ranked results**
+Every search starts from scratch. Nothing is saved from the last one.
 
-Streams text/code; samples PDFs/Office; searches images by name. JEV checks up to
-128 candidates. No persistent index or search history.
+The app walks the folder you chose and looks at each file. It always checks the
+name. For text and code, it reads the file and counts how often your words show
+up. PDFs and Office files get a short sample. Pictures and other files are
+matched by name only.
+
+Those matches are ranked by how well the words fit, and the best ones stay. If
+you have an API key, JEV reads the top 128 and moves the ones that actually
+match what you meant to the top. Files JEV does not check stay in the list as
+local matches.
 
 ### Try it
 
