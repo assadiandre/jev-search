@@ -27,13 +27,12 @@ flowchart TD
     G --> F
 ```
 
-1. **Prepare the query locally.** Trim and normalize the text, split it into words, remove common filler words, and use a small built-in synonym list, such as `resume ↔ CV`. JEV does not rewrite or interpret the query before scanning.
-2. **Discover candidates.** Walk the chosen folder afresh, matching names and paths while selectively reading text excerpts. Hidden and generated directories are skipped by default. Content probes can discover relevant files even when their names do not match.
-3. **Build a diverse shortlist.** Reserve slots for name matches, content matches, folder context, document previews, and exploration. Spread selections across directories and redistribute unused slots. Fast search selects at most **128 distinct candidates**.
-4. **Ask JEV for relevance.** Send the original query, candidate metadata, and available excerpts in batches through OpenRouter. An early batch can start while scanning and sampling continue. Fast search allows up to four concurrent requests.
-5. **Filter and rank.** Strong local name or literal text matches can appear immediately as **Not JEV-checked**. JEV scores below **0.6** remove a candidate, including a provisional match. Accepted candidates rank by JEV score ahead of unchecked local matches. Reported API cost updates as responses arrive.
+1. **Prepare locally.** Normalize the query, split it into words, remove filler words, and expand known synonyms. JEV is not called at this stage.
+2. **Scan and shortlist.** Walk the filesystem fresh and sample text. Combine name, content, and context matches with directory diversity and exploration.
+3. **Score with JEV.** Send the query and candidates in batches through OpenRouter. Scanning and scoring overlap; local matches can appear immediately.
+4. **Rank results.** JEV filters out scores below **0.6** and ranks accepted matches. API cost updates as responses arrive.
 
-The stages overlap; the diagram shows data flow, not a sequence of blocking steps. Fast search trades exhaustive coverage for latency and cost. **Look wider** starts a fresh, broader pass over eligible entries, with richer sampled excerpts and additional API cost. Neither mode builds a persistent index.
+**Fast mode** limits JEV evaluation to **128 candidates** for lower latency and cost. **Full JEV mode**, available through **Look wider**, runs a fresh pass that evaluates every eligible entry with JEV using richer sampled excerpts. It takes longer and costs more; file contents are still sampled. Neither mode builds a persistent index.
 
 [Search limits and content coverage →](docs/search.md)
 
