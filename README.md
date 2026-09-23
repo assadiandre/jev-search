@@ -9,7 +9,6 @@ A small macOS menu bar app for finding files in your own words. Powered by JEV, 
 **No pre-indexing. Every search scans your files fresh.**
 
 - Search filenames and text from PDFs, documents, and code.
-- Open a compact search bar with **⌘ ⇧ Space**.
 - See results, file previews, and API cost as they arrive.
 - Use **Look wider** when you need a broader search.
 
@@ -29,20 +28,21 @@ npm start
 
 Add your OpenRouter API key in **Settings** to enable semantic search. Your account needs access to `~typesafe/jev-latest`. Without a key, local filename search works offline.
 
-## Usage
+## How it uses JEV
 
-Type a query and press **Return**. JEV searches your Desktop by default; use the folder button to choose another location.
+Python scans your chosen folder and shortlists candidates using filenames, paths, and sampled text. It sends batches of candidates with your query to **JEV through OpenRouter**, which scores how relevant each entry is. The app uses those scores to filter and rank results.
 
-| Shortcut | Action |
-| --- | --- |
-| ⌘ ⇧ Space | Show search |
-| ⌘ K | Focus the search field |
-| ↑ / ↓, then Return | Select and open a result |
-| Esc | Stop searching, clear results, or hide the empty bar |
+```mermaid
+flowchart LR
+    A[Your query] --> B[Fresh local scan]
+    B --> C[Shortlist + text excerpts]
+    C --> D[JEV via OpenRouter]
+    D --> E[Ranked results + API cost]
+    B --> F[Provisional filename matches]
+    F --> E
+```
 
-Click away or press **×** to hide the window. JEV stays in the menu bar; right-click its icon to quit. The expand button gives results and previews more room.
-
-Fast search checks a limited set of candidates and samples file contents. **Look wider** runs a broader pass and incurs additional API cost. Hidden and generated files are skipped by default. [How search works →](docs/search.md)
+Fast search sends up to **128 candidates** to JEV. Local matches can appear while it works; JEV's decisions can then confirm or remove them. **Look wider** runs a broader pass with additional API cost. No index is built or saved. [Search details →](docs/search.md)
 
 ## Build
 
