@@ -28,7 +28,7 @@ from pypdf import PdfReader
 
 ENDPOINT = "https://openrouter.ai/api/alpha/decisions"
 MODEL = "~typesafe/jev-latest"
-GENERATED = {"node_modules", "__pycache__", "venv", "env", "target", "build", "dist", "DerivedData", "Pods", "Carthage"}
+GENERATED = {"node_modules", "__pycache__", "venv", "env", "target", "build", "dist", "DerivedData", "Pods", "Carthage", "memory_deps"}
 PACKAGES = {".app", ".framework", ".bundle", ".xcassets"}
 SECRET_NAMES = {"jev.txt", ".env", ".netrc", ".npmrc", ".pypirc", "credentials", "credentials.json", "secrets.json", "secrets.yaml", "id_rsa", "id_ed25519", "authorized_keys", "known_hosts"}
 SECRET_EXTENSIONS = {".pem", ".key", ".p12", ".pfx", ".keychain", ".keychain-db"}
@@ -94,7 +94,7 @@ class Options:
             include_generated=bool(value.get("includeGenerated", False)),
             read_contents=bool(value.get("readContents", True)),
             concurrency=max(1, min(24, int(value.get("concurrency", 12)))),
-            mode="deep" if value.get("mode") == "deep" else "fast",
+            mode=value.get("mode") if value.get("mode") in {"streaming","deep"} else "fast",
         )
 
 
@@ -455,6 +455,10 @@ class Search:
 
     async def run(self, root: Path, query: str, key: str, options: Options, client: httpx.AsyncClient | None = None) -> None:
         self.threshold = options.threshold
+        if options.mode == "streaming":
+            from backend.live_stream import run_stream
+            await run_stream(self, root, query, key, options)
+            return
         if options.mode == "fast":
             from backend.fast import run_fast
             await run_fast(self, root, query, key, options, client)

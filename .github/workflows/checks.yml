@@ -16,5 +16,6 @@ jobs:
           cache: npm
       - run: python -m venv .venv
       - run: .venv/bin/python -m pip install -r requirements-lock.txt
+      - run: .venv/bin/python -m pip install --target memory_deps --only-binary=:all: --no-deps -r requirements-streaming.txt
       - run: npm ci
       - run: npm test

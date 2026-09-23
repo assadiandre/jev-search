@@ -1,5 +1,7 @@
 # Search details
 
+> Historical documentation for the earlier Fast/Look wider algorithm. The default on this branch is now streaming BM25 + JEV; see [README.md](../README.md) for current behavior.
+
 ## How it works
 
 1. Python uses lightweight `os.scandir` traversal to enumerate the entire selected scope fresh. Names and paths are checked while the walk runs; size/date reads are deferred. Unread metadata is shown as “Not read yet.”

@@ -1,8 +1,8 @@
 {
-  "name": "jev-search",
-  "productName": "JEV SEARCH",
+  "name": "jev-search-streaming",
+  "productName": "JEV SEARCH Streaming",
   "version": "1.0.0",
-  "description": "Live Desktop search. Python core, JEV intelligence, zero index.",
+  "description": "Streaming BM25 Desktop search with JEV reranking; no saved index.",
   "main": "electron/main.cjs",
   "private": true,
   "scripts": {

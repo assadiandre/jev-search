@@ -7,7 +7,7 @@ process.chdir(root);
 
 async function build() {
   const python = path.join(root, '.venv/bin/python');
-  const result = spawnSync(python, ['-m', 'PyInstaller', '--noconfirm', '--clean', '--onedir', '--name', 'jev-core', '--exclude-module', 'PIL', '--exclude-module', 'pytest', '--exclude-module', 'pygments', '--distpath', 'dist/python', '--workpath', 'build/pyinstaller', '--specpath', 'build', '--paths', root, 'backend/server.py'], { stdio: 'inherit' });
+  const result = spawnSync(python, ['-m', 'PyInstaller', '--noconfirm', '--clean', '--onedir', '--name', 'jev-core', '--exclude-module', 'PIL', '--exclude-module', 'pytest', '--exclude-module', 'pygments', '--distpath', 'dist/python', '--workpath', 'build/pyinstaller', '--specpath', 'build', '--paths', root, '--paths', path.join(root, 'memory_deps'), '--hidden-import', 'apsw', 'backend/server.py'], { stdio: 'inherit' });
   if (result.status !== 0) throw new Error('Python packaging failed.');
   const stage = path.join(root, 'build/electron');
   fs.mkdirSync(stage, { recursive: true });
@@ -17,17 +17,17 @@ async function build() {
   fs.writeFileSync(path.join(stage, 'package.json'), JSON.stringify(pkg, null, 2));
   const icon = path.join(root, 'assets/icon.icns');
   const output = await packager({
-    dir: stage, out: path.join(root, 'dist/mac'), name: 'JEV SEARCH', executableName: 'JEV SEARCH',
+    dir: stage, out: path.join(root, 'dist/mac'), name: 'JEV SEARCH Streaming', executableName: 'JEV SEARCH Streaming',
     platform: 'darwin', arch: process.arch, overwrite: true, prune: false,
-    appBundleId: 'local.jev.search', appCategoryType: 'public.app-category.productivity',
+    appBundleId: 'local.jev.search.streaming', appCategoryType: 'public.app-category.productivity',
     icon: fs.existsSync(icon) ? icon : undefined,
-    extendInfo: { LSUIElement: true, NSDesktopFolderUsageDescription: 'JEV SEARCH reads your Desktop only when you run a live search.', NSDocumentsFolderUsageDescription: 'JEV SEARCH reads the folder you choose when you run a live search.', NSDownloadsFolderUsageDescription: 'JEV SEARCH reads the folder you choose when you run a live search.' },
+    extendInfo: { LSUIElement: true, NSDesktopFolderUsageDescription: 'JEV SEARCH Streaming reads your Desktop only when you run a live search.', NSDocumentsFolderUsageDescription: 'JEV SEARCH Streaming reads the folder you choose when you run a live search.', NSDownloadsFolderUsageDescription: 'JEV SEARCH Streaming reads the folder you choose when you run a live search.' },
   });
-  const source = path.join(output[0], 'JEV SEARCH.app');
+  const source = path.join(output[0], 'JEV SEARCH Streaming.app');
   // Preserve relative dylib symlinks. Node's default cp rewrites them to source paths.
   const runtimeCopy = spawnSync('/usr/bin/ditto', [path.join(root, 'dist/python'), path.join(source, 'Contents/Resources/python')], { stdio: 'inherit' });
   if (runtimeCopy.status !== 0) throw new Error('Bundling Python failed.');
-  const destination = path.join(root, 'JEV SEARCH.app');
+  const destination = path.join(root, 'JEV SEARCH Streaming.app');
   fs.rmSync(destination, { recursive: true, force: true });
   const copy = spawnSync('/usr/bin/ditto', [source, destination], { stdio: 'inherit' });
   if (copy.status !== 0) throw new Error('Copying the app bundle failed.');
