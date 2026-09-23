@@ -22,22 +22,16 @@
 Search files, documents, and code with **⌘⌥Space**. Fresh local retrieval,
 JEV relevance ranking, and live API costs.
 
-### Benchmarks
+### Ranking
 
-**623 queries · 66.3¢ total · No saved index**
+Across 623 test questions, JEV put a relevant result in the top 5 about **7 times
+out of 10** on a hard set (NFCorpus, 70.9%) and **8 times out of 10** on a
+science set (SciFact, 80.3%). Plain word-matching scored 0.322 and 0.687. JEV
+moved those to **0.377** and **0.745**. Each search cost about **a tenth of a
+cent**.
 
-| Full test set | NFCorpus | SciFact |
-|---|---:|---:|
-| Documents / queries | 3,633 / 323 | 5,183 / 300 |
-| Ranking score: BM25 → JEV¹ | 0.322 → **0.377** | 0.687 → **0.745** |
-| Relevant result in top 5 | **70.9%** | **80.3%** |
-| Relevant documents found in top 100 | 25.5% | 92.9% |
-| Average API cost / search | **0.084¢** | **0.130¢** |
-| Average time, including JEV | 0.82s | 1.10s |
-| Peak search-worker memory | 55.8 MiB | 57.8 MiB |
-
-¹ nDCG@10: higher means better-ranked results. Complete text-retrieval test sets;
-Desktop performance varies. Memory excludes UI/parent; file caching may help timing.
+JEV takes the same candidates and moves the right one higher. On the hard set,
+many relevant documents never reach JEV, so this is a ranking result.
 
 ### On a real Desktop
 
