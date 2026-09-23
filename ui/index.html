@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>JEV SEARCH</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="compact">
+  <div class="titlebar"><span class="titlebar-label">JEV Search</span></div>
+  <div class="shell">
+    <main>
+      <form class="search-box" id="search-form"><span data-icon="search"></span><input id="query" autocomplete="off" spellcheck="false" maxlength="2000" placeholder="Search files and folders…" aria-label="Search your files"><button id="clear-query" class="clear-query hidden" type="button" title="Clear search">×</button><button id="search-button" class="search-submit" type="submit">Search <span>↵</span></button><div class="search-tools"><button id="compact-folder" type="button" aria-label="Choose search folder" title="Choose search folder"><span data-icon="folder"></span></button><button id="compact-settings" type="button" aria-label="Settings" title="Settings"><span data-icon="settings"></span></button><button id="layout-toggle" type="button" aria-label="Open workspace" title="Open workspace"><span data-icon="arrow"></span></button><button id="close-window" type="button" aria-label="Close search window" title="Close search window"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div></form>
+      <div class="search-meta"><span id="root-name">Desktop</span><span id="mode-label">Live · no index</span></div>
+      <div class="filters" role="tablist" aria-label="Filter results">
+        <button class="filter active" data-filter="all" role="tab" aria-selected="true"><span data-icon="grid"></span> Everything</button>
+        <button class="filter" data-filter="folder" role="tab" aria-selected="false"><span data-icon="folder"></span> Folders</button>
+        <button class="filter" data-filter="document" role="tab" aria-selected="false"><span data-icon="document"></span> Documents</button>
+        <button class="filter" data-filter="image" role="tab" aria-selected="false"><span data-icon="image"></span> Images</button>
+        <button class="filter" data-filter="code" role="tab" aria-selected="false"><span data-icon="code"></span> Code</button>
+        <button class="filter" data-filter="media" role="tab" aria-selected="false"><span data-icon="media"></span> Media</button>
+      </div>
+      <div class="notice hidden" id="notice" role="status"></div>
+      <section class="welcome" id="welcome"><p>Type a search above and press Return.</p></section>
+      <section class="results-area hidden" id="results-area">
+        <div class="results-heading"><div><span id="results-title">Searching…</span><span class="result-total" id="results-total"></span></div><div class="results-heading-right"><span id="elapsed"></span><div class="search-cost" id="search-cost" role="status" aria-atomic="true"><span class="search-cost-label" id="search-cost-label">Search cost</span><span class="search-cost-total"><strong id="search-cost-value">$0.0000</strong><span class="search-cost-currency">USD</span></span></div><button id="stop-button" class="stop-button hidden"><span>■</span> Stop</button></div></div>
+        <div class="coverage-bar"><span id="coverage-summary"></span><button type="button" id="widen-button" class="widen-button hidden" title="Start a fresh full search that evaluates every eligible entry. Takes longer and incurs additional API cost; the cost total resets for that search.">Look wider <span>↗</span></button></div><div class="results-split"><div class="results-list" id="results-list" role="listbox" aria-label="Search results"></div><aside class="detail" id="detail"><div class="detail-empty">Select a file to take a closer look.</div></aside></div>
+      </section>
+      <footer class="statusbar"><div id="status-left"><span class="status-dot"></span> Ready when you are</div><div id="status-right"><kbd>⌘ K</kbd> to search <span class="footer-divider">·</span> <kbd>↑ ↓</kbd> to navigate</div></footer>
+      <div class="progress-track"><div id="progress-bar"></div></div>
+    </main>
+  </div>
+  <dialog id="settings-dialog"><form id="settings-form"><div class="dialog-heading"><div><div class="eyebrow">PREFERENCES</div><h2>Search settings</h2></div><button type="button" class="dialog-close" id="settings-close" aria-label="Close settings">×</button></div>
+    <label class="field-label" for="api-key">OpenRouter API key <span id="key-status"></span></label><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your OpenRouter key"><p class="field-help">Encrypted with macOS Keychain. Never included in search data.</p>
+    <div class="settings-divider"></div>
+    <label class="setting-row"><span><strong>Include hidden & generated files</strong><small>Search inside dependencies, build folders, and app bundles.</small></span><input id="include-generated" type="checkbox" class="switch"></label>
+    <label class="setting-row"><span><strong>Read file contents</strong><small>Use text excerpts from PDFs, Office documents, text, and code.</small></span><input id="read-contents" type="checkbox" class="switch" checked></label>
+    <div class="setting-row"><span><strong>Parallel requests</strong><small>More requests can finish large searches sooner.</small></span><select id="concurrency"><option value="4">4 · Gentle</option><option value="8">8 · Balanced</option><option value="12">12 · Fast</option><option value="24">24 · Fastest</option></select></div>
+    <div class="privacy-note"><span data-icon="info"></span><p>JEV runs through OpenRouter. Searches send the query, relative paths, and short text excerpts for eligible files. Images and media use metadata; scanned PDFs need embedded text. No search index or history is saved. Large files use sampled text, so an exhaustive content match is not guaranteed.</p></div>
+    <div class="settings-error hidden" id="settings-error"></div><div class="dialog-footer"><span>~typesafe/jev-latest</span><button type="submit" class="primary-button">Save settings</button></div>
+  </form></dialog>
+  <div class="toast hidden" id="toast" role="status"></div>
+  <script src="cost.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

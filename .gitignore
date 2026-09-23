@@ -1,0 +1,26 @@
+.venv/
+node_modules/
+build/
+dist/
+__pycache__/
+.pytest_cache/
+.DS_Store
+*.app/
+.env
+*.log
+
+# Local credentials and signing material
+.env.*
+!.env.example
+jev.txt
+*.enc
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local tooling
+.coverage
+htmlcov/
+.idea/
+.vscode/
