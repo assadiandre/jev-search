@@ -15,63 +15,41 @@
 
 ---
 
-Search names, documents, and code from a single search bar. Local retrieval finds
-candidates; **JEV** judges which ones match what you mean.
-
-- **Fresh by default.** Search the files you have right now.
-- **Small shortlist.** Stream text locally, then let JEV rerank up to 128 candidates.
-- **Cost in plain sight.** See the reported API charge for every search.
-
-Press **⌘⌥Space**, type a query, and hit Return.
+Search files, documents, and code with **⌘⌥Space**. Fresh local retrieval,
+JEV relevance ranking, and live API costs.
 
 ### Benchmarks
 
-**623 queries. Fresh scans. Less than one cent per search.**
+**623 queries · 66.3¢ total · No saved index**
 
-Complete NFCorpus and SciFact test sets, with the same BM25 candidates before
-and after JEV reranking. nDCG@10 measures ranking relevance; higher is better.
-
-| Dataset | Queries | BM25 nDCG@10 | + JEV | Recall@100¹ | API cost / search |
-|---|---:|---:|---:|---:|---:|
-| NFCorpus · 3,633 documents | 323 | 0.3223 | **0.3773** | 25.5% | **0.0843¢** |
-| SciFact · 5,183 documents | 300 | 0.6874 | **0.7451** | 92.9% | **0.1301¢** |
-
-JEV improved nDCG@10 by **17.1%** and **8.4%** relative to BM25 alone.
-The entire run cost **66.3¢**. Per-search costs above are **fractions of a cent**.
-
-| Full scan + JEV | NFCorpus | SciFact |
+| Full test set | NFCorpus | SciFact |
 |---|---:|---:|
-| Average search time | 0.82s | 1.10s |
+| Documents / queries | 3,633 / 323 | 5,183 / 300 |
+| Ranking score: BM25 → JEV¹ | 0.322 → **0.377** | 0.687 → **0.745** |
+| Relevant result in top 5 | **70.9%** | **80.3%** |
+| Relevant documents found in top 100 | 25.5% | 92.9% |
+| Average API cost / search | **0.084¢** | **0.130¢** |
+| Average time, including JEV | 0.82s | 1.10s |
 | Peak search-worker memory | 55.8 MiB | 57.8 MiB |
 
-¹ Recall@100 is the share of known relevant documents in JEV's top 100.
-These are text-retrieval results from two BEIR datasets, not the full suite or a
-Desktop relevance evaluation. Timings may benefit from the OS file cache;
-memory excludes the UI and parent service. Costs and timings vary.
-
-[Full results, uncertainty & published comparisons →](docs/streaming-benchmark.md)
+¹ nDCG@10: higher means better-ranked results. Complete text-retrieval test sets;
+Desktop performance varies. Memory excludes UI/parent; file caching may help timing.
+[Full methodology →](docs/streaming-benchmark.md)
 
 ### On a real Desktop
 
-One local test searched for **“budget”** across **21,595 entries** in **3.88 seconds**,
-with **48.75 MiB** peak search-worker memory. It streamed **7,566 text files**
-(45.8 MB), sampled 13 PDF/Office documents, and searched 14,015 entries by name only.
+**21,595 entries · 3.88 seconds · 48.75 MiB worker memory**
 
-This is an anecdotal measurement on one Mac, using the default everyday-file
-scope—not a claim that every file's contents were read. It used **no API calls**;
-JEV reranking would add time and cost. Memory excludes the UI and parent service,
-and the OS file cache may have helped.
+One local-only “budget” search: 7,566 text files streamed, 13 documents sampled,
+14,015 entries searched by name. No API calls; JEV adds time and cost. One Mac,
+potentially cached files; UI/parent memory excluded. [Details →](VALIDATION.md)
 
-[Desktop measurement & validation →](VALIDATION.md)
+### How it works
 
-### Under the hood
+**Fresh scan → BM25 shortlist → JEV → ranked results**
 
-**Your query → fresh scan → BM25 shortlist → JEV → ranked results**
-
-Text and code are streamed in small chunks. PDFs and Office documents use sampled
-text; images are searched by name. No persistent index or search history.
-
-[How search works →](docs/streaming-search.md)
+Streams text/code; samples PDFs/Office; searches images by name. JEV checks up to
+128 candidates. No persistent index or search history. [Search guide →](docs/streaming-search.md)
 
 ### Try it
 
@@ -90,15 +68,13 @@ npm start
 Add your OpenRouter key in **Settings** to enable JEV. Without a key, local search
 works offline. Run `npm run build` to create **JEV SEARCH Streaming.app**.
 
-### Your files & privacy
+### Privacy
 
-JEV searches send your query, candidate paths, and text excerpts to OpenRouter/TypeSafe.
-Common credential files are excluded, but filtering is best-effort. Keys entered in
-Settings stay in memory for the session; the app can also read `~/Desktop/jev.txt`.
-No Keychain access.
+JEV sends queries, candidate paths, and excerpts to OpenRouter/TypeSafe.
+Credential filtering is best-effort. Settings keys stay in memory; `~/Desktop/jev.txt`
+is also supported. No Keychain access.
 
 ---
 
 [Development & limits](docs/streaming-search.md#develop-and-rebuild) ·
-[Validation](VALIDATION.md) ·
-[Benchmarks](docs/streaming-benchmark.md)
+[Validation](VALIDATION.md) · [Benchmarks](docs/streaming-benchmark.md)
