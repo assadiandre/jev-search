@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/icon.png" alt="JEV Search logo" width="128" height="128">
+</p>
+
 # JEV Search
 
 A small macOS menu bar app for finding files in your own words. Powered by JEV, with a Python core and an Electron UI.
