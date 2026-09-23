@@ -4,29 +4,13 @@
 
 # JEV Search
 
-A small macOS menu bar app for finding files in your own words. Powered by JEV, with a Python core and an Electron UI.
+Find files in your own words with **JEV**. JEV Search uses the model to judge which files match your query, based on their names, paths, and text excerpts.
 
 **No pre-indexing. Every search scans your files fresh.**
 
 - Search filenames and text from PDFs, documents, and code.
 - See results, file previews, and API cost as they arrive.
 - Use **Look wider** when you need a broader search.
-
-## Quick start
-
-Requires **macOS**, **Python 3.12+**, and **Node.js 22+**.
-
-```sh
-git clone https://github.com/assadiandre/jev-search.git
-cd jev-search
-
-python3.12 -m venv .venv
-.venv/bin/python -m pip install -r requirements-lock.txt
-npm ci
-npm start
-```
-
-Add your OpenRouter API key in **Settings** to enable semantic search. Your account needs access to `~typesafe/jev-latest`. Without a key, local filename search works offline.
 
 ## How it uses JEV
 
@@ -43,6 +27,22 @@ flowchart LR
 ```
 
 Fast search sends up to **128 candidates** to JEV. Local matches can appear while it works; JEV's decisions can then confirm or remove them. **Look wider** runs a broader pass with additional API cost. No index is built or saved. [Search details →](docs/search.md)
+
+## Quick start
+
+Requires **macOS**, **Python 3.12+**, and **Node.js 22+**.
+
+```sh
+git clone https://github.com/assadiandre/jev-search.git
+cd jev-search
+
+python3.12 -m venv .venv
+.venv/bin/python -m pip install -r requirements-lock.txt
+npm ci
+npm start
+```
+
+Add your OpenRouter API key in **Settings** to enable semantic search. Your account needs access to `~typesafe/jev-latest`. Without a key, local filename search works offline.
 
 ## Build
 
@@ -66,6 +66,6 @@ npm run test:renderer    # UI and keyboard behavior
 npm run test:window      # Native window behavior
 ```
 
-The code lives in `backend/` (search), `electron/` (desktop integration), and `ui/` (interface).
-
 Issues and pull requests are welcome. Use synthetic files for bug reports and run the relevant tests before submitting changes. See [the search roadmap](SEARCH_PLAN.md) for planned work.
+
+Implementation: Python search core in `backend/`, with a small Electron shell in `electron/` and interface in `ui/`.
