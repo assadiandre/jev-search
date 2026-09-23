@@ -24,32 +24,51 @@ candidates; **JEV** judges which ones match what you mean.
 
 Press **⌘⌥Space**, type a query, and hit Return.
 
-### Benchmarks
+### How good is the search?
 
-**623 queries. Fresh scans. Less than one cent per search.**
+**Better than keyword search alone. Below the published AI systems shown here.**
 
-Complete NFCorpus and SciFact test sets, with the same BM25 candidates before
-and after JEV reranking. nDCG@10 measures ranking relevance; higher is better.
+We tested all **623 questions** in two public document-search tests. The score
+below measures how well useful documents appear near the top of the results.
+**Higher is better; 100 is a perfect ranking.** It is not a percentage of searches
+answered correctly. Compare systems within each column—the tests differ in difficulty.
 
-| Dataset | Queries | BM25 nDCG@10 | + JEV | Recall@100¹ | API cost / search |
-|---|---:|---:|---:|---:|---:|
-| NFCorpus · 3,633 documents | 323 | 0.3223 | **0.3773** | 25.5% | **0.0843¢** |
-| SciFact · 5,183 documents | 300 | 0.6874 | **0.7451** | 92.9% | **0.1301¢** |
-
-JEV improved nDCG@10 by **17.1%** and **8.4%** relative to BM25 alone.
-The entire run cost **66.3¢**. Per-search costs above are **fractions of a cent**.
-
-| Full scan + JEV | NFCorpus | SciFact |
+| Search system | Health & nutrition documents¹ | Scientific documents² |
 |---|---:|---:|
-| Average search time | 0.82s | 1.10s |
-| Peak search-worker memory | 55.8 MiB | 57.8 MiB |
+| Keyword search alone (our BM25 baseline) | 32.2 | 68.7 |
+| **JEV Search** | **37.7** | **74.5** |
+| Jina reranker v3.5 · published | 38.5 | 77.2 |
+| Mixedbread large v2 · published | 38.4 | 79.9 |
+| Qwen3 reranker 4B · published | 42.5 | 78.0 |
 
-¹ Recall@100 is the share of known relevant documents in JEV's top 100.
-These are text-retrieval results from two BEIR datasets, not the full suite or a
-Desktop relevance evaluation. Timings may benefit from the OS file cache;
-memory excludes the UI and parent service. Costs and timings vary.
+**What does that feel like?** JEV placed at least one known relevant document in
+the first five results for **71 out of 100** health queries and **80 out of 100**
+science queries, versus **64 and 76** with keyword search alone.
 
-[Full results, uncertainty & published comparisons →](docs/streaming-benchmark.md)
+**Comparison note:** We tested JEV and keyword search together. The other scores
+come from a [published evaluation](https://arxiv.org/html/2607.18152v1#A1) using an
+embedding index to find candidates first. JEV scans fresh. Different candidate
+selection means these published numbers provide context, not a controlled head-to-head.
+
+¹ NFCorpus: 323 queries, 3,633 documents. ² SciFact: 300 queries, 5,183 documents.
+Scores are nDCG@10 × 100. These tests measure document-text retrieval, not Desktop
+filename search or the entire BEIR benchmark suite.
+
+### What does it cost?
+
+**About $1 buys 770–1,190 searches at our measured API costs.**
+
+| Per search | Health test | Science test |
+|---|---:|---:|
+| Average API cost | **0.084¢** | **0.130¢** |
+| Average time, including JEV | 0.82 seconds | 1.10 seconds |
+| Peak search-worker memory | 56 MiB | 58 MiB |
+
+All 623 searches cost **66.3¢ total**. These are measurements, not guarantees:
+Desktop costs and speed vary. Memory excludes the UI and parent service; the OS
+file cache may improve timings.
+
+[Full scores, methods & limitations →](docs/streaming-benchmark.md)
 
 ### On a real Desktop
 
