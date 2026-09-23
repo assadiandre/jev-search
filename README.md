@@ -38,7 +38,6 @@ JEV relevance ranking, and live API costs.
 
 ¹ nDCG@10: higher means better-ranked results. Complete text-retrieval test sets;
 Desktop performance varies. Memory excludes UI/parent; file caching may help timing.
-[Full methodology →](docs/streaming-benchmark.md)
 
 ### On a real Desktop
 
@@ -46,14 +45,14 @@ Desktop performance varies. Memory excludes UI/parent; file caching may help tim
 
 One local-only “budget” search: 7,566 text files streamed, 13 documents sampled,
 14,015 entries searched by name. No API calls; JEV adds time and cost. One Mac,
-potentially cached files; UI/parent memory excluded. [Details →](VALIDATION.md)
+potentially cached files; UI/parent memory excluded.
 
 ### How it works
 
 **Fresh scan → BM25 shortlist → JEV → ranked results**
 
 Streams text/code; samples PDFs/Office; searches images by name. JEV checks up to
-128 candidates. No persistent index or search history. [Search guide →](docs/streaming-search.md)
+128 candidates. No persistent index or search history.
 
 ### Try it
 
@@ -77,8 +76,3 @@ works offline. Run `npm run build` to create **JEV SEARCH Streaming.app**.
 JEV sends queries, candidate paths, and excerpts to OpenRouter/TypeSafe.
 Credential filtering is best-effort. Settings keys stay in memory; `~/Desktop/jev.txt`
 is also supported. No Keychain access.
-
----
-
-[Development & limits](docs/streaming-search.md#develop-and-rebuild) ·
-[Validation](VALIDATION.md) · [Benchmarks](docs/streaming-benchmark.md)
