@@ -12,21 +12,30 @@ Find files in your own words with **JEV**. JEV Search uses the model to judge wh
 - See results, file previews, and API cost as they arrive.
 - Use **Look wider** when you need a broader search.
 
-## How it uses JEV
+## Search algorithm
 
-Python scans your chosen folder and shortlists candidates using filenames, paths, and sampled text. It sends batches of candidates with your query to **JEV through OpenRouter**, which scores how relevant each entry is. The app uses those scores to filter and rank results.
+JEV scores file relevance. Local retrieval first narrows a fresh filesystem scan into a small set of candidates, keeping model calls bounded.
 
 ```mermaid
-flowchart LR
-    A[Your query] --> B[Fresh local scan]
-    B --> C[Shortlist + text excerpts]
-    C --> D[JEV via OpenRouter]
-    D --> E[Ranked results + API cost]
-    B --> F[Provisional filename matches]
-    F --> E
+flowchart TD
+    A[Your query] --> B[Normalize, tokenize, expand known synonyms]
+    B --> C[Fresh filesystem scan + selective text sampling]
+    C --> D[Select up to 128 candidates]
+    D --> E[Batch relevance scoring with JEV via OpenRouter]
+    E --> F[Filter and rank results]
+    C --> G[Provisional local matches]
+    G --> F
 ```
 
-Fast search sends up to **128 candidates** to JEV. Local matches can appear while it works; JEV's decisions can then confirm or remove them. **Look wider** runs a broader pass with additional API cost. No index is built or saved. [Search details →](docs/search.md)
+1. **Prepare the query locally.** Trim and normalize the text, split it into words, remove common filler words, and use a small built-in synonym list, such as `resume ↔ CV`. JEV does not rewrite or interpret the query before scanning.
+2. **Discover candidates.** Walk the chosen folder afresh, matching names and paths while selectively reading text excerpts. Hidden and generated directories are skipped by default. Content probes can discover relevant files even when their names do not match.
+3. **Build a diverse shortlist.** Reserve slots for name matches, content matches, folder context, document previews, and exploration. Spread selections across directories and redistribute unused slots. Fast search selects at most **128 distinct candidates**.
+4. **Ask JEV for relevance.** Send the original query, candidate metadata, and available excerpts in batches through OpenRouter. An early batch can start while scanning and sampling continue. Fast search allows up to four concurrent requests.
+5. **Filter and rank.** Strong local name or literal text matches can appear immediately as **Not JEV-checked**. JEV scores below **0.6** remove a candidate, including a provisional match. Accepted candidates rank by JEV score ahead of unchecked local matches. Reported API cost updates as responses arrive.
+
+The stages overlap; the diagram shows data flow, not a sequence of blocking steps. Fast search trades exhaustive coverage for latency and cost. **Look wider** starts a fresh, broader pass over eligible entries, with richer sampled excerpts and additional API cost. Neither mode builds a persistent index.
+
+[Search limits and content coverage →](docs/search.md)
 
 ## Quick start
 
